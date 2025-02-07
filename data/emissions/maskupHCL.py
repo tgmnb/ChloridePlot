@@ -25,7 +25,7 @@ except:
 
 
     # 合并所有中国省份边界为一个总的多边形
-    china_polygon = china_shape[china_shape["name"] != "台湾省"].unary_union
+    china_polygon = china_shape.unary_union
 
     # 创建一个空的 mask，大小与网格经纬度匹配
     mask = np.zeros((len(lat), len(lon)), dtype=bool)

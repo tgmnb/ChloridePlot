@@ -7,7 +7,7 @@ import numpy as np
 from shapely.geometry import Point
 import numpy as np
 from shapely.vectorized import contains
-input_dir = "/mnt/d/fin/fin/cam/"
+input_dir = "/mnt/d/fin/nochg/cam/"
 output_dir = input_dir+"/cut/"
 file_name = "mergedmean.nc"
 base_dir = r"/mnt/d/gasdata/"

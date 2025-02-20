@@ -1,2 +1,6 @@
 *.png
 alldata/
+output/
+*.csv
+*.pyc
+__pycache__/

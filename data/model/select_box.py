@@ -1,10 +1,6 @@
 import xarray as xr
 import os
-import config as cfg
-input_dir = "/mnt/d/fin/nochg/cam/"
-output_dir = input_dir + "/box/"
-file_name = "merge2036.nc"
-base_dir = r"/mnt/d/gasdata/"
+import data.model.data.config as cfg
 
 def select_box(file_name, input_dir, output_dir, list):
     
@@ -28,11 +24,25 @@ def select_box(file_name, input_dir, output_dir, list):
     except Exception as e:
         print(f"执行 sellonlatbox 操作时出错: {e}")
 
-def batch():
+def batch(config):
     list = cfg.box_list
     for filename in os.listdir(input_dir):
-        if 'merge' in filename:
-            select_box(filename, input_dir, output_dir, list)
+        if config == 'default':
+            if 'merge' in filename:
+                select_box(filename, input_dir, output_dir, list)
+        elif config == 'col':
+            if 'column_concentration' in filename:
+                select_box(filename, input_dir, output_dir, list)
 
 if __name__ == "__main__":
-    batch()
+    config = 'col'
+    if config == 'default':
+        input_dir = "/mnt/d/fin/nochg/cam/"
+        output_dir = input_dir + "/box/"
+        base_dir = r"/mnt/d/gasdata/"
+        batch('defult')   
+    elif config == 'col':
+        input_dir = "/mnt/d/fin/fin/cam/"
+        output_dir = input_dir + "/colbox/"
+        base_dir = r"/mnt/d/gasdata/"
+        batch('col')   

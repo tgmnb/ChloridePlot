@@ -4,7 +4,17 @@ from matplotlib.colors import LogNorm
 import numpy as np
 import geopandas as gpd
 from matplotlib.gridspec import GridSpec
+import matplotlib.font_manager as fm
 
+# 设置绘图风格
+font_path = 'MSYH.TTC'
+fm.fontManager.addfont(font_path)
+my_font = fm.FontProperties(fname=font_path)
+print("当前字体名为：", my_font.get_name())
+
+# 3. 设置 matplotlib 默认字体
+plt.rcParams['font.family'] = my_font.get_name()
+plt.rcParams['axes.unicode_minus'] = False
 # 设置matplotlib参数
 plt.rcParams['font.size'] = 12
 plt.rcParams['axes.titlesize'] = 14
@@ -44,6 +54,13 @@ def create_spatial_plot(data_hcl, data_pcl, seasons):
     total_emissions = xr.where(total_emissions <= 0, 1e-20, total_emissions)
     vmin = max(1e-20, vmin)
     
+    season_chinese = {
+        'Spring': '春季',
+        'Summer': '夏季',
+        'Autumn': '秋季',
+        'Winter': '冬季'
+    }
+
     for idx, (season, months) in enumerate(seasons.items()):
         ax = fig.add_subplot(gs[idx//2, idx%2])
         
@@ -52,15 +69,15 @@ def create_spatial_plot(data_hcl, data_pcl, seasons):
         
         # 绘制分布图（使用对数刻度）
         im = ax.pcolormesh(data_hcl.lon, data_hcl.lat, seasonal_mean,
-                          norm=LogNorm(vmin=vmin, vmax=vmax),
+                          norm=LogNorm(vmin=vmin*10000, vmax=vmax/10),
                           cmap='jet')
         
         # 添加省份边界
         china_map.boundary.plot(ax=ax, color='k', linewidth=0.5)
         
-        ax.set_title(f'{season}')
-        ax.set_xlabel('Longitude')
-        ax.set_ylabel('Latitude')
+        ax.set_title(f'{season_chinese[season]}')
+        ax.set_xlabel('经度')
+        ax.set_ylabel('纬度')
         
         # 设置坐标轴范围
         ax.set_xlim([70, 140])
@@ -72,9 +89,9 @@ def create_spatial_plot(data_hcl, data_pcl, seasons):
     # 添加colorbar
     cbar_ax = fig.add_axes([0.15, 0.05, 0.7, 0.02])
     cbar = plt.colorbar(im, cax=cbar_ax, orientation='horizontal')
-    cbar.ax.set_xlabel('Total Chlorine Emissions (kg/m²/s)')
+    cbar.ax.set_xlabel('总氯排放量 ($kg·m^{-2}·s^{-1}$)', fontsize=14)
     
-    plt.suptitle('Seasonal Spatial Distribution of Total Chlorine Emissions', 
+    plt.suptitle('总氯排放的季节性空间分布', 
                 y=0.95, fontsize=16)
     return fig
 
@@ -88,7 +105,9 @@ seasons = {
 
 # 绘制并保存图像
 fig = create_spatial_plot(hcl_data, pcl_data, seasons)
+
 plt.savefig('output/3.6spatial_distribution.png', dpi=300, bbox_inches='tight')
+# plt.show()
 plt.close()
 
 print("空间分布图已保存")

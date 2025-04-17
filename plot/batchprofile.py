@@ -134,29 +134,41 @@ def batch(final_folder, nochg_folder):
     for file in os.listdir(final_folder):
         if file.endswith("_levels.csv"):
             spice = file.replace("_levels.csv", "")
+
             final_file = os.path.join(final_folder, file)
             nochg_file = os.path.join(nochg_folder, file)
+            if spice == 'O3':
+                    spice = "$O_{3}$ "
+            output_path = output_dir+f'{spice}_combined_vertical_profile.png'
+
+            if os.path.exists(output_path):
+                print(f"{output_path} 已存在，跳过。")
+                continue
 
             try:
                 # 获取 2038 年的数据
                 final_df = get_last_year(final_file)
                 nochg_df = get_last_year(nochg_file)
 
+
                 # 创建一个包含两个子图的图形
                 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
 
                 # 左图：绘制 diff
-                ax1.plot(final_df.iloc[:, 0] - nochg_df.iloc[:, 0], nochg_df.index, label='diff')
-                # ax1.plot((final_df.iloc[:, 0] - nochg_df.iloc[:, 0])/nochg_df.iloc[:,0], nochg_df.index, label='diff')
+                # ax1.plot(final_df.iloc[:, 0] - nochg_df.iloc[:, 0], nochg_df.index, label='diff')
+                ax1.plot((final_df.iloc[:, 0] - nochg_df.iloc[:, 0])/nochg_df.iloc[:,0], nochg_df.index, label='diff')
                 ax1.invert_yaxis()  # 反转纵坐标
                 # ax1.set_xscale('log')  # 将横坐标设置为对数坐标系
                 # ax1.set_xlabel(spice + 'mixing ratio(mol/mol)-dryair')
-                ax1.set_xlabel(spice + ' (mol/mol)-dryair')
+                ax1.set_xlabel(spice + ' Relative Difference-dryair')
                 ax1.set_ylabel('pressure (hPa)')
-                # ax1.set_title("Relative Difference in " + spice + 'mixing ratio between S1 and SSP370')
-                ax1.set_title("Difference in " + spice + 'mixing ratio between S1 and SSP370')
+                ax1.set_title("Relative Difference in " + spice + ' mixing ratio between S1 and SSP370')
+                ax1.set_title("Difference in " + spice + ' mixing ratio between S1 and SSP370')
                 ax1.grid(True)
                 ax1.legend()
+
+                # 在左图的左上角添加标注 'a'
+                ax1.text(-0.15, 0.95, '(a)', transform=ax1.transAxes, fontsize=12, fontweight='bold')
 
                 # 右图：绘制 s1 和 ssp370，并将横坐标设置为对数坐标系
                 ax2.plot(final_df.iloc[:, 0], final_df.index, label='S1')
@@ -165,22 +177,26 @@ def batch(final_folder, nochg_folder):
                 ax2.set_xscale('log')  # 将横坐标设置为对数坐标系
                 ax2.set_xlabel(spice + ' (mol/mol)-dryair') 
                 ax2.set_ylabel('pressure (hPa)')
+
+                # 在右图的左上角添加标注 'b'
+                ax2.text(-0.15, 0.95, '(b)', transform=ax2.transAxes, fontsize=12, fontweight='bold')
+
                 ax2.set_title(f'{spice} S1 and SSP370 vertical profile')
                 ax2.grid(True)
                 ax2.legend()
 
                 # 保存图形
-                plt.savefig(output_dir+f'{spice}_combined_vertical_profile.png')
+                plt.savefig(output_path)
                 plt.close(fig)
             except Exception as e:
                 plt.plot(final_df.iloc[:, 0], final_df.index, label='S1')
                 plt.title(f'{spice} S1 vertical profile')
-                plt.xlabel(spice + 'mixing ratio(mol/mol)-dryair')
+                plt.xlabel(spice + ' mixing ratio(mol/mol)-dryair')
                 plt.ylabel('pressure (hPa)')
                 plt.grid(True)
                 plt.legend()
                 plt.savefig(output_dir+f'{spice}_S1_vertical_profile.png')
-                plt.close(fig)
+                plt.close()
                 print(f"处理 {spice} 时出错: {e}，跳过该物种。")
 
 
@@ -188,5 +204,5 @@ def batch(final_folder, nochg_folder):
 final_folder = "/mnt/d/fin/fin/cam/fldmean/"
 nochg_folder = '/mnt/d/fin/nochg/cam/fldmean/'
 # spicail()
-output_dir = "./plot/output/all_profile/"
+output_dir = "./plot/output/all_profile2/"
 batch(final_folder, nochg_folder)

@@ -8,8 +8,23 @@ from matplotlib.gridspec import GridSpec
 import seaborn as sns
 import os
 import matplotlib.ticker as ticker
+import matplotlib.font_manager as fm
 
-# 设置matplotlib参数
+# 设置 matplotlib 参数
+plt.rcParams['font.size'] = 12
+plt.rcParams['axes.titlesize'] = 14
+
+# 设置绘图风格
+sns.set_style("whitegrid")
+sns.set_palette("husl")
+font_path = 'SIMHEI.TTF'
+fm.fontManager.addfont(font_path)
+my_font = fm.FontProperties(fname=font_path)
+print("当前字体名为：", my_font.get_name())
+
+# 3. 设置 matplotlib 默认字体
+plt.rcParams['font.family'] = my_font.get_name()
+plt.rcParams['axes.unicode_minus'] = False
 plt.rcParams['font.size'] = 12
 plt.rcParams['axes.titlesize'] = 14
 plt.rcParams['figure.figsize'] = (15, 12)
@@ -49,14 +64,15 @@ def analyze_emissions_features(monthly_df, mean_df):
     significant_trends = []
     
     for province in monthly_df['province'].unique():
+
         province_data = monthly_df[monthly_df['province'] == province]
         if len(province_data) < 2:  # 至少需要两个数据点
             continue
             
         # 计算趋势
         years = province_data['year'].values
-        hcl = province_data['hcl_emission'].values
-        pcl = province_data['pcl_emission'].values
+        hcl = province_data['hcl_emission'].values/1e6  # 转换为Gg
+        pcl = province_data['pcl_emission'].values/1e6  # 转换为Gg
         
         # 确保数据有效
         if np.all(np.isnan(hcl)) or np.all(np.isnan(pcl)):
@@ -193,20 +209,22 @@ def analyze_province_data(hcl_yearly, pcl_yearly, years, selected_provinces):
 
 def plot_temporal_analysis(monthly_df, selected_provinces):
     """绘制时间演变分析图"""
+    monthly_df['hcl_emission'] = monthly_df['hcl_emission']/1e6 
+    monthly_df['pcl_emission'] = monthly_df['pcl_emission']/1e6
     fig = plt.figure(figsize=(24, 12))  # 增加总宽度
     gs = GridSpec(2, 2, width_ratios=[1, 1.5], wspace=0.3)  # 增加wspace参数来控制左右图之间的间距
     
     # 准备数据
     years = sorted(monthly_df['year'].unique())
     
-    # 创建省份名称映射字典
+    # 创建省份名称映射字典，直接使用中文
     province_names = {
-        '山东省': 'Shandong',
-        '黑龙江省': 'Heilongjiang',
-        '新疆维吾尔自治区': 'Xinjiang',
-        '香港特别行政区': 'Hong Kong',
-        '上海市': 'Shanghai',
-        '西藏自治区': 'Tibet'
+        '山东省': '山东省',
+        '黑龙江省': '黑龙江省',
+        '新疆维吾尔自治区': '新疆维吾尔自治区',
+        '香港特别行政区': '香港特别行政区',
+        '上海市': '上海市',
+        '西藏自治区': '西藏自治区'
     }
     
     # 计算年度总量
@@ -231,8 +249,8 @@ def plot_temporal_analysis(monthly_df, selected_provinces):
             else:
                 pcl_total = 0
                 
-            hcl_yearly[province].append(hcl_total)
-            pcl_yearly[province].append(pcl_total)
+            hcl_yearly[province].append(hcl_total)  
+            pcl_yearly[province].append(pcl_total)  
     
     # 调用分析函数
     analyze_province_data(hcl_yearly, pcl_yearly, years, selected_provinces)
@@ -242,9 +260,9 @@ def plot_temporal_analysis(monthly_df, selected_provinces):
     for province in selected_provinces:
         ax1.semilogy(years, hcl_yearly[province], 
                 label=province_names[province], marker='o', markersize=4)
-    ax1.set_title('HCl Provincial Annual Total Emissions')
-    ax1.set_xlabel('Year')
-    ax1.set_ylabel('Annual Emissions (kg/year)')
+    ax1.set_title('HCl重点省份年排放总量')
+    ax1.set_xlabel('年份')
+    ax1.set_ylabel('年排放量 (Gg/year)')
     ax1.legend(bbox_to_anchor=(1.02, 1), loc='upper left')
     ax1.grid(True, alpha=0.3)
     ax1.text(-0.1, 1.05, '(a)', transform=ax1.transAxes, fontsize=16, fontweight='bold')
@@ -255,18 +273,18 @@ def plot_temporal_analysis(monthly_df, selected_provinces):
     ax1.set_ylim(y_min*0.5, y_max*2)
     
     # 强制显示更多刻度
-    locmaj = ticker.LogLocator(base=10.0, numticks=20)
-    ax1.yaxis.set_major_locator(locmaj)
-    ax1.yaxis.set_major_formatter(ticker.LogFormatterSciNotation())
+    # locmaj = ticker.LogLocator(base=10.0, numticks=20)
+    # ax1.yaxis.set_major_locator(locmaj)
+    # ax1.yaxis.set_major_formatter(ticker.LogFormatterSciNotation())
     
     # 2. pCl重点省份年总量时间序列
     ax2 = fig.add_subplot(gs[1, 0])
     for province in selected_provinces:
         ax2.semilogy(years, pcl_yearly[province], 
                 label=province_names[province], marker='o', markersize=4)
-    ax2.set_title('pCl Provincial Annual Total Emissions')
-    ax2.set_xlabel('Year')
-    ax2.set_ylabel('Annual Emissions (kg/year)')
+    ax2.set_title('pCl重点省份年排放总量')
+    ax2.set_xlabel('年份')
+    ax2.set_ylabel('年排放量 (Gg/year)')
     ax2.legend(bbox_to_anchor=(1.02, 1), loc='upper left')
     ax2.grid(True, alpha=0.3)
     ax2.text(-0.1, 1.05, '(b)', transform=ax2.transAxes, fontsize=16, fontweight='bold')
@@ -277,9 +295,9 @@ def plot_temporal_analysis(monthly_df, selected_provinces):
     ax2.set_ylim(y_min*0.5, y_max*2)
     
     # 强制显示更多刻度
-    locmaj = ticker.LogLocator(base=10.0, numticks=20)
-    ax2.yaxis.set_major_locator(locmaj)
-    ax2.yaxis.set_major_formatter(ticker.LogFormatterSciNotation())
+    # locmaj = ticker.LogLocator(base=10.0, numticks=20)
+    # ax2.yaxis.set_major_locator(locmaj)
+    # ax2.yaxis.set_major_formatter(ticker.LogFormatterSciNotation())
     
     # 3. 季节性变化热图
     ax3 = fig.add_subplot(gs[:, 1])
@@ -296,16 +314,16 @@ def plot_temporal_analysis(monthly_df, selected_provinces):
             monthly_data.append(monthly_mean)
         monthly_means[province_names[province]] = monthly_data
     
-    monthly_means.index = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    monthly_means.index = ['一月', '二月', '三月', '四月', '五月', '六月', 
+                          '七月', '八月', '九月', '十月', '十一月', '十二月']
     
     # 绘制热图
     sns.heatmap(monthly_means, ax=ax3, cmap='YlOrRd', 
                 xticklabels=True, yticklabels=True,
-                cbar_kws={'label': 'Average Emissions (kg/month)'})
-    ax3.set_title('Monthly Average Total Chlorine Emissions by Province')
-    ax3.set_xlabel('Province')
-    ax3.set_ylabel('Month')
+                cbar_kws={'label': '平均排放量 (Gg/month)'})  # 中文图例
+    ax3.set_title('各省氯总排放量月平均值')  # 中文标题
+    ax3.set_xlabel('省份')  # 中文 x 轴标签
+    ax3.set_ylabel('月份')  # 中文 y 轴标签
     ax3.text(-0.1, 1.05, '(c)', transform=ax3.transAxes, fontsize=16, fontweight='bold')
     plt.xticks(rotation=45, ha='right')
     

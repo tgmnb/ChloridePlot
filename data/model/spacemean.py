@@ -2,7 +2,7 @@ from cdo import Cdo
 import os
 import xarray as xr
 import pandas as pd
-import data.model.data.config as cfg
+import config as cfg
 '''
     将数据集处理为空间平均数据
     defult: 全球原始数据
@@ -26,7 +26,7 @@ def process_files():
         os.makedirs(output_dir)
     elif os.path.exists(output_dir+file_name):
         print(f"文件已存在: {output_dir+file_name}")
-        return
+        # return
 
     for filename in os.listdir(input_dir):
         print(filename)
@@ -109,14 +109,15 @@ def to_csv():
         print("No single-layer data found")
 
 if __name__ == "__main__":
-    config='box'
+    config='defult'
 
     if config=='defult':
         # 一 1 全球逐年空间平均数据
         input_dir = "/mnt/d/fin/nochg/cam/"
         output_dir = input_dir+"/fldmean/"
         file_name = "mergedmean.nc"
-        
+        # process_files()
+        to_csv()
 
     elif config=='cut':
         # 一 2 中国逐年空间平均数据
@@ -125,7 +126,7 @@ if __name__ == "__main__":
         file_name = "mergedmean.nc"
         process_files()
         to_csv()
-
+ 
     if config=='box':
         # 一 3  区域数据
         boxlist = cfg.box_list

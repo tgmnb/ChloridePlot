@@ -3,8 +3,13 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from datetime import datetime
 import os
+import matplotlib.font_manager as fm
+import matplotlib.pyplot as plt
 
-# 设置matplotlib参数
+# 用 Noto Sans CJK JP 来显示中文
+
+
+# 设置 matplotlib 参数
 plt.rcParams['font.size'] = 12
 plt.rcParams['axes.titlesize'] = 14
 plt.rcParams['figure.figsize'] = (15, 6)  # 调整图片大小以适应两个子图
@@ -12,7 +17,14 @@ plt.rcParams['figure.figsize'] = (15, 6)  # 调整图片大小以适应两个子
 # 设置绘图风格
 sns.set_style("whitegrid")
 sns.set_palette("husl")
+font_path = 'SIMHEI.TTF'
+fm.fontManager.addfont(font_path)
+my_font = fm.FontProperties(fname=font_path)
+print("当前字体名为：", my_font.get_name())
 
+# 3. 设置 matplotlib 默认字体
+plt.rcParams['font.family'] = my_font.get_name()
+plt.rcParams['axes.unicode_minus'] = False
 # 读取数据
 try:
     base_dir = r"/mnt/d/gasdata/"
@@ -24,6 +36,8 @@ except FileNotFoundError:
     print("Error: Data files not found. Please check the file paths.")
     exit(1)
 
+
+
 # 计算年平均值
 Hcl_yearly = Hcldata.resample('YE').mean()
 Pcl_yearly = Pcldata.resample('YE').mean()
@@ -34,19 +48,19 @@ Pcl_yearly = Pcl_yearly[['pCl_ene', 'pCl_ind', 'pCl_res', 'pCl_all', 'TOTAL']]
 
 # 定义标签映射
 hcl_labels = {
-    'HCl_ene': 'power',
-    'HCl_ind': 'industry',
-    'HCl_res': 'residential',
-    'HCl_all': 'others',
-    'TOTAL': 'TOTAL'
+    'HCl_ene': '电力',
+    'HCl_ind': '工业',
+    'HCl_res': '居民',
+    'HCl_all': '其它',
+    'TOTAL': '总量'
 }
 
 pcl_labels = {
-    'pCl_ene': 'power',
-    'pCl_ind': 'industry',
-    'pCl_res': 'residential',
-    'pCl_all': 'others',
-    'TOTAL': 'TOTAL'
+    'pCl_ene': '电力',
+    'pCl_ind': '工业',
+    'pCl_res': '居民',
+    'pCl_all': '其它',
+    'TOTAL': '总量'
 }
 
 # 只选择1962-2018年间每四年的数据
@@ -56,7 +70,7 @@ Pcl_yearly = Pcl_yearly[Pcl_yearly.index.year.isin(years)]
 
 # 准备堆叠图的数据
 stacked_data = pd.DataFrame(index=years)
-for col in ['power', 'industry', 'residential', 'others']:
+for col in ['电力', '工业', '居民', '其它', '总量']:
     hcl_col = [c for c in Hcl_yearly.columns if hcl_labels[c] == col][0]
     pcl_col = [c for c in Pcl_yearly.columns if pcl_labels[c] == col][0]
     stacked_data[col] = Hcl_yearly[hcl_col].values + Pcl_yearly[pcl_col].values
@@ -89,9 +103,9 @@ for column in Hcl_yearly.columns:
              markeredgewidth=1.5)
     lines1.append(line)
 
-ax1.set_title('HCl Annual Average Emissions')
-ax1.set_xlabel('Year')
-ax1.set_ylabel('Emissions (kg/m²/s)')
+ax1.set_title('HCl年平均排放量')
+ax1.set_xlabel('年')
+ax1.set_ylabel(r'排放量 ($kg·m^{-2}·s^{-1}$)')
 ax1.grid(True, alpha=0.3)
 
 # 绘制PCl数据
@@ -105,9 +119,9 @@ for column in Pcl_yearly.columns:
              markeredgewidth=1.5)
     lines2.append(line)
 
-ax2.set_title('pCl Annual Average Emissions')
-ax2.set_xlabel('Year')
-ax2.set_ylabel('Emissions (kg/m²/s)')
+ax2.set_title('pCl年平均排放量')
+ax2.set_xlabel('年')
+ax2.set_ylabel(r'排放量 ($kg·m^{-2}·s^{-1}$)')
 ax2.grid(True, alpha=0.3)
 
 # 在两个子图之间添加共同的图例
@@ -119,23 +133,23 @@ fig.legend(lines1, legend_labels,
 
 # 绘制堆叠面积图
 ax3.stackplot(stacked_data.index, 
-              stacked_data['power'],
-              stacked_data['industry'],
-              stacked_data['residential'],
-              stacked_data['others'],
-              labels=['power', 'industry', 'residential', 'others'],
+              stacked_data['电力'],
+              stacked_data['工业'],
+              stacked_data['居民'],
+              stacked_data['其它'],
+              labels=['电力', '工业', '居民', '其它'],
               alpha=0.8)
 
 # 添加total线
-ax3.plot(stacked_data.index, stacked_data['TOTAL'], 
+ax3.plot(stacked_data.index, stacked_data['总量'], 
          'k--', 
-         label='TOTAL', 
+         label='总量', 
          linewidth=2,
          zorder=5)  # 确保total线在最上层
 
-ax3.set_title('Total Chlorine Emissions by Sector')
-ax3.set_xlabel('Year')
-ax3.set_ylabel('Total Emissions (kg/m²/s)')
+ax3.set_title('按排放部门划分的氯总排放量')
+ax3.set_xlabel('年')
+ax3.set_ylabel(r'排放量 ($kg/m^{2}·s^{-1}$)')
 ax3.grid(True, alpha=0.3)
 ax3.legend(loc='upper left')
 
@@ -143,5 +157,5 @@ ax3.legend(loc='upper left')
 plt.subplots_adjust(top=0.95, bottom=0.1, hspace=0.4)
 
 # 保存图表
-plt.savefig('output/yearly_averages.png', dpi=300, bbox_inches='tight')
+plt.savefig('output/3.1yearly_averages.png', dpi=300, bbox_inches='tight')
 print("图表已保存为 'yearly_averages.png'")

@@ -6,7 +6,7 @@ import config as cfg
 
 # 柱浓度的逐年趋势图
 file_name = "fldmean.csv"
-output_dir = "/home/tgm/gasplot/plot/output/yearlycolumn_trend/"
+output_dir = "/home/tgm/gasplot/plot/output/ryearlycolumn_trend/"
 
 
 def read_data(fin_dir, nochg_dir, file_name):
@@ -112,84 +112,114 @@ result_df.to_csv(os.path.join(output_dir, 'deviation_rates.csv'))
 
 # exit()
 
+for df in [colfindf, cncolfindf, colnochgdf, cncolnochgdf] + [box for _, box, _ in boxdata] + [box for _, _, box in boxdata]:
+    df['atmospheric oxidants'] = df['CL'] + df['OH']
+    # df['SOA'] = df['SOAG0'] + df['SOAG1'] + df['SOAG2'] + df['SOAG3'] + df['SOAG4']
+    df['SOA'] = df['soa1_a1'] + df['soa1_a2']  + df['soa2_a1'] + df['soa2_a2']+ df['soa3_a1'] + df['soa3_a2']+ df['soa4_a1'] + df['soa4_a2']+ df['soa5_a1'] + df['soa5_a2'] + \
+                df['soa1_c1'] + df['soa1_c2'] + df['soa2_c1'] + df['soa2_c2'] + df['soa3_c1'] + df['soa3_c2'] + df['soa4_c1'] + df['soa4_c2'] + df['soa5_c1'] + df['soa5_c2']
+    df['pom'] = df['pom_a1'] + df['pom_a4'] + \
+                df['pom_c1'] + df['pom_c4']
+
+    df['dust'] = df['dst_a1'] + df['dst_a2'] + df['dst_a3'] + \
+                df['dst_c1'] + df['dst_c2'] + df['dst_c3']
+    df['bc'] = df['bc_a1'] + df['bc_a4'] + \
+                df['bc_c1'] + df['bc_c4']
+    df['ncl'] = df['ncl_a1'] + df['ncl_a2'] + df['ncl_a3'] + \
+                df['ncl_c1'] + df['ncl_c2'] + df['ncl_c3']
+    df['so4'] = df['so4_a1'] + df['so4_a2'] + df['so4_a3'] + \
+                df['so4_c1'] + df['so4_c2'] + df['so4_c3'] 
+    df['all aerosol'] = df['SOA'] + df['pom'] + df['dust'] + df['bc'] + df['ncl'] + df['so4']
+
 # 绘制每一列
 for column in colfindf.columns:
     if column == 'time':
         continue
-    try:
-        # 在绘图前，将整数年份转换为datetime对象
-        colfindf['time'] = pd.to_datetime(colfindf['time'], format='%Y')
-        cncolfindf['time'] = pd.to_datetime(cncolfindf['time'], format='%Y')
-        colnochgdf['time'] = pd.to_datetime(colnochgdf['time'], format='%Y')
-        cncolnochgdf['time'] = pd.to_datetime(cncolnochgdf['time'], format='%Y')
-        china_diff['time'] = pd.to_datetime(cncolnochgdf['time'], format='%Y')
-        global_diff['time'] = pd.to_datetime(cncolnochgdf['time'], format='%Y')
-        
-        # 创建包含三个子图的画布
-        y_min = min(colfindf[column].min(), cncolfindf[column].min(),
-                    colnochgdf[column].min(), cncolnochgdf[column].min(),
-                    min([boxcolfindf[column].min() for _, boxcolfindf, _ in boxdata]),
-                    min([boxcolnochgdf[column].min() for _, _, boxcolnochgdf in boxdata]))
-        y_max = max(colfindf[column].max(), cncolfindf[column].max(),
-                    colnochgdf[column].max(), cncolnochgdf[column].max(),
-                    max([boxcolfindf[column].max() for _, boxcolfindf, _ in boxdata]),
-                    max([boxcolnochgdf[column].max() for _, _, boxcolnochgdf in boxdata]))
-        fig, axes = plt.subplots(2, 3, figsize=(18, 12), sharey='col')
-        # 绘制 S1 情景
-        for box in boxdata:
-            (box_name, boxcolfindf, boxcolnochgdf) = box
-            boxcolfindf['time'] = pd.to_datetime(boxcolfindf['time'], format='%Y')
-            boxcolnochgdf['time'] = pd.to_datetime(boxcolnochgdf['time'], format='%Y')
-            axes[1, 0].plot(boxcolfindf['time'], boxcolfindf[column], label=box_name, linestyle='-')
-            axes[1, 1].plot(boxcolnochgdf['time'], boxcolnochgdf[column], label=box_name, linestyle='-')
-            axes[1, 2].plot(boxcolfindf['time'], boxcolfindf[column] - boxcolnochgdf[column],
-                            label=box_name + " Difference", linestyle='-')
-        axes[0, 0].plot(colfindf['time'], colfindf[column], label='Global', linestyle='-', color='blue')
-        axes[0, 0].plot(cncolfindf['time'], cncolfindf[column], label='China', linestyle='-', color='orange')
-        axes[0, 0].set_title(f'S1 Trend of {column}')
-        axes[1, 0].set_title(f'S1 Trend of {column}')
-        axes[0, 0].set_xlabel('Time')
-        axes[1, 0].set_xlabel('Time')
-        axes[0, 0].set_ylabel(f'{column} ($kg/m^{{2}}$)')
-        axes[1, 0].set_ylabel(f'{column} ($kg/m^{{2}}$)')
-        axes[0, 0].set_ylim(y_min, y_max)
-        axes[1, 0].set_ylim(y_min, y_max)
-        # 设置 x 轴为日期格式
-        for ax in axes.flat:
-            ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
-            ax.xaxis.set_major_locator(mdates.YearLocator(2))
-        axes[0, 0].legend()
-        axes[1, 0].legend()
-        # 绘制 SSP370 情景
-        axes[0, 1].plot(colnochgdf['time'], colnochgdf[column], label='Global', linestyle='-', color='blue')
-        axes[0, 1].plot(cncolnochgdf['time'], cncolnochgdf[column], label='China', linestyle='-', color='orange')
-        axes[0, 1].set_title(f'SSP370 Trend of {column}')
-        axes[1, 1].set_title(f'SSP370 Trend of {column}')
-        axes[0, 1].set_xlabel('Time')
-        axes[1, 1].set_xlabel('Time')
-        axes[0, 1].set_ylim(y_min, y_max)
-        axes[1, 1].set_ylim(y_min, y_max)
-        axes[0, 1].legend()
-        axes[1, 1].legend()
+    if os.path.exists(output_dir + column + ".png"):
+        continue
+    # try:
+    # 在绘图前，将整数年份转换为datetime对象
+    colfindf['time'] = pd.to_datetime(colfindf['time'], format='%Y')
+    cncolfindf['time'] = pd.to_datetime(cncolfindf['time'], format='%Y')
+    colnochgdf['time'] = pd.to_datetime(colnochgdf['time'], format='%Y')
+    cncolnochgdf['time'] = pd.to_datetime(cncolnochgdf['time'], format='%Y')
+    china_diff['time'] = pd.to_datetime(cncolnochgdf['time'], format='%Y')
+    global_diff['time'] = pd.to_datetime(cncolnochgdf['time'], format='%Y')
+    
+    # 创建包含三个子图的画布
+    y_min = min(colfindf[column].min(), cncolfindf[column].min(),
+                colnochgdf[column].min(), cncolnochgdf[column].min(),
+                min([boxcolfindf[column].min() for _, boxcolfindf, _ in boxdata]),
+                min([boxcolnochgdf[column].min() for _, _, boxcolnochgdf in boxdata]))
+    y_max = max(colfindf[column].max(), cncolfindf[column].max(),
+                colnochgdf[column].max(), cncolnochgdf[column].max(),
+                max([boxcolfindf[column].max() for _, boxcolfindf, _ in boxdata]),
+                max([boxcolnochgdf[column].max() for _, _, boxcolnochgdf in boxdata]))
+    fig, axes = plt.subplots(2, 3, figsize=(18, 12), sharey='col')
+    # 绘制 S1 情景
+    for box in boxdata:
+        (box_name, boxcolfindf, boxcolnochgdf) = box
+        boxcolfindf['time'] = pd.to_datetime(boxcolfindf['time'], format='%Y')
+        boxcolnochgdf['time'] = pd.to_datetime(boxcolnochgdf['time'], format='%Y')
+        axes[1, 0].plot(boxcolfindf['time'], boxcolfindf[column], label=box_name, linestyle='-')
+        axes[1, 1].plot(boxcolnochgdf['time'], boxcolnochgdf[column], label=box_name, linestyle='-')
+        axes[1, 2].plot(boxcolfindf['time'], (boxcolfindf[column] - boxcolnochgdf[column])/boxcolnochgdf[column],
+                        label=box_name + "", linestyle='-')
+    axes[0, 0].plot(colfindf['time'], colfindf[column], label='Global', linestyle='-', color='blue')
+    axes[0, 0].plot(cncolfindf['time'], cncolfindf[column], label='China', linestyle='-', color='orange')
+    axes[0, 0].set_title(f'S1 Trend of {column}')
+    axes[1, 0].set_title(f'S1 Trend of {column}')
+    axes[0, 0].set_xlabel('Time')
+    axes[1, 0].set_xlabel('Time')
+    axes[0, 0].set_ylabel(f'{column} ($kg/m^{{2}}$)')
+    axes[1, 0].set_ylabel(f'{column} ($kg/m^{{2}}$)')
+    axes[0, 0].set_ylim(y_min, y_max)
+    axes[1, 0].set_ylim(y_min, y_max)
+    # 添加标注
+    axes[0, 0].text(-0.15, 0.9, '(a)', transform=axes[0, 0].transAxes, fontsize=12, fontweight='bold', color='black')
+    axes[1, 0].text(-0.15, 0.9, '(d)', transform=axes[1, 0].transAxes, fontsize=12, fontweight='bold', color='black')
+    # 设置 x 轴为日期格式
+    for ax in axes.flat:
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
+        ax.xaxis.set_major_locator(mdates.YearLocator(2))
+    axes[0, 0].legend()
+    axes[1, 0].legend()
+    # 绘制 SSP370 情景
+    axes[0, 1].plot(colnochgdf['time'], colnochgdf[column], label='Global', linestyle='-', color='blue')
+    axes[0, 1].plot(cncolnochgdf['time'], cncolnochgdf[column], label='China', linestyle='-', color='orange')
+    axes[0, 1].set_title(f'SSP370 Trend of {column}')
+    axes[1, 1].set_title(f'SSP370 Trend of {column}')
+    axes[0, 1].set_xlabel('Time')
+    axes[1, 1].set_xlabel('Time')
+    axes[0, 1].set_ylim(y_min, y_max)
+    axes[1, 1].set_ylim(y_min, y_max)
+    axes[0, 1].legend()
+    axes[1, 1].legend()
+    # 添加标注
+    axes[0, 1].text(-0.15, 0.9, '(b)', transform=axes[0, 1].transAxes, fontsize=12, fontweight='bold', color='black')
+    axes[1, 1].text(-0.15, 0.9, '(e)', transform=axes[1, 1].transAxes, fontsize=12, fontweight='bold', color='black')
 
-        axes[0, 2].plot(colfindf['time'], colfindf[column] - colnochgdf[column], label='Global Difference', linestyle='-', color='blue')
-        axes[0, 2].plot(cncolfindf['time'], cncolfindf[column] - cncolnochgdf[column], label='China Difference', linestyle='-', color='orange')
+    axes[0, 2].plot(colfindf['time'], (colfindf[column] - colnochgdf[column])/colnochgdf[column], label='Global', linestyle='-', color='blue')
+    axes[0, 2].plot(cncolfindf['time'], (cncolfindf[column] - cncolnochgdf[column])/cncolnochgdf[column], label='China', linestyle='-', color='orange')
 
-        axes[0, 2].set_title(f'Difference between S1 and SSP370 of {column}')
-        axes[1, 2].set_title(f'Difference between S1 and SSP370 of {column}')
-        axes[0, 2].set_xlabel('Time')
-        axes[1, 2].set_xlabel('Time')
-        axes[0, 2].set_ylabel(f'Difference in {column} ($kg/m^{{2}}$)')
-        axes[1, 2].set_ylabel(f'Difference in {column} ($kg/m^{{2}}$)')
-        axes[0, 2].legend()
-        axes[1, 2].legend()
+    axes[0, 2].set_title(f'Relative Difference between S1 and SSP370 of {column}')
+    axes[1, 2].set_title(f'Relative Difference between S1 and SSP370 of {column}')
+    axes[0, 2].set_xlabel('Time')
+    axes[1, 2].set_xlabel('Time')
+    # axes[0, 2].set_ylabel(f'Relative Difference in {column} ($kg/m^{{2}}$)')
+    axes[0, 2].set_ylabel(f'Relative Difference in {column} ')
+    axes[1, 2].set_ylabel(f'Relative Difference in {column} ')
+    axes[0, 2].legend()
+    axes[1, 2].legend()
+    # 添加标注
+    axes[0, 2].text(-0.15, 0.9, '(c)', transform=axes[0, 2].transAxes, fontsize=12, fontweight='bold', color='black')
+    axes[1, 2].text(-0.15, 0.9, '(f)', transform=axes[1, 2].transAxes, fontsize=12, fontweight='bold', color='black')
 
-    except Exception as e:
-        plt.plot(colfindf['time'], colfindf[column], label='Global', linestyle='-', color='blue')
-        plt.plot(cncolfindf['time'], cncolfindf[column], label='China', linestyle='-', color='orange')
-        plt.title(f'S1 Trend of {column}')
-        print(f"无法绘制 {column} 的差值趋势图。")
-        print(e)
+    # except Exception as e:
+    #     plt.plot(colfindf['time'], colfindf[column], label='Global', linestyle='-', color='blue')
+    #     plt.plot(cncolfindf['time'], cncolfindf[column], label='China', linestyle='-', color='orange')
+    #     plt.title(f'S1 Trend of {column}')
+    #     print(f"无法绘制 {column} 的差值趋势图。"+str(e))
+    #     print(e)
 
     # 调整子图布局
     plt.tight_layout()

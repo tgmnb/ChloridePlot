@@ -32,10 +32,30 @@ nochg_total_prec = nochg_data['PRECL'] + nochg_data['PRECC']
 var = 'Total PREC'
 fin_data[var] = total_prec
 nochg_data[var] = nochg_total_prec
+
+for df in [fin_data, nochg_data]:
+    df['NO$_x$'] = df['NOX']
+    df['O$_3$'] = df['O3']
+    df['acid'] = df['WD_H2SO4'] + df['WD_HNO3'] + df['WD_HCL'] + df['WD_HF']
+    # df['SOA'] = df['SOAG0'] + df['SOAG1'] + df['SOAG2'] + df['SOAG3'] + df['SOAG4']
+    df['SOA'] = df['soa1_a1'] + df['soa1_a2']  + df['soa2_a1'] + df['soa2_a2']+ df['soa3_a1'] + df['soa3_a2']+ df['soa4_a1'] + df['soa4_a2']+ df['soa5_a1'] + df['soa5_a2']
+    df['pom'] = df['pom_a1'] + df['pom_a4']
+    df['dust'] = df['dst_a1'] + df['dst_a2'] + df['dst_a3'] 
+    df['bc'] = df['bc_a1'] + df['bc_a4']
+    df['ncl'] = df['ncl_a1'] + df['ncl_a2'] + df['ncl_a3']
+    df['so4'] = df['so4_a1'] + df['so4_a2'] + df['so4_a3'] 
+    df['all aerosol'] = df['SOA'] + df['pom'] + df['dust'] + df['bc'] + df['ncl'] + df['so4']
+    var = 'Precipitation'
+    # m/s 转换为 mm/day
+    conversion_factor = 86400 * 1000
+    df['Precipitation'] = df['PRECT'] * conversion_factor
+    
 # 循环数据里的所有变量
 # for var in fin_data.data_vars:
-for var in ['TS', 'PRECL', 'PRECC','Total PREC','PM25']:
-    if var in ['lat', 'lon', 'lev', 'ilev', 'time','time_bnds']:
+# for var in ['TS', 'PRECL', 'PRECC','Total PREC','PM25','NOX','O$_3$']:
+# for var in ['acid']:
+for var in ['SOA','pom','dust','bc','ncl','so4','all aerosol','Precipitation']:
+    if var in ['lat', 'lon', 'lev', 'ilev', 'time','time_bnds','NO$_x$']:
         continue
     if len(fin_data[var].dims)==1:
         continue
@@ -44,8 +64,10 @@ for var in ['TS', 'PRECL', 'PRECC','Total PREC','PM25']:
             continue
     elif len(fin_data[var].dims) == 4:    
         if 'lev' in fin_data[var].dims:
-            fin_data[var] = fin_data[var].isel(lev=len(fin_data.lev)-1)
-            nochg_data[var] = nochg_data[var].isel(lev=len(nochg_data.lev)-1)
+            # fin_data[var] = fin_data[var].isel(lev=len(fin_data.lev)-1)
+            # nochg_data[var] = nochg_data[var].isel(lev=len(nochg_data.lev)-1)
+            fin_data[var] = fin_data[var].isel(lev=50)
+            nochg_data[var] = nochg_data[var].isel(lev=50)
     
     output_filename = os.path.join(output_dir, f'{var}_diff.png')
     if os.path.exists(output_filename):
@@ -58,7 +80,11 @@ for var in ['TS', 'PRECL', 'PRECC','Total PREC','PM25']:
     elif len(fin_data[var].dims)==2:
         if 'lat' not in fin_data[var].dims:
             continue
-
+    
+    if var in ['Precipitation']:
+        unit = 'mm/day'
+    else:   
+        unit = ''
 # 创建一个包含5张子图的画布，调整布局参数
     fig = plt.figure(figsize=(12, 12))
     # 调整整体边距和子图间距
@@ -71,7 +97,8 @@ for var in ['TS', 'PRECL', 'PRECC','Total PREC','PM25']:
     # 计算并绘制平均差值
     diff_time_mean = fin_data[var].mean(dim='time') - nochg_data[var].mean(dim='time')
     if 'lat' in diff_time_mean.dims and 'lon' in diff_time_mean.dims:
-        diff_time_mean.plot(ax=ax0)
+        p = diff_time_mean.plot(ax=ax0)  # 保存绘图返回的对象
+        p.colorbar.set_label(f'{var} ({unit})')  # 设置 color bar 的标签
 
     # 使用gridlines添加经纬度标签
     gl = ax0.gridlines(draw_labels=True, linewidth=0.5, color='gray', alpha=0.5)
@@ -106,7 +133,8 @@ for var in ['TS', 'PRECL', 'PRECC','Total PREC','PM25']:
         fin_seasonal_data = fin_data[var].sel(time=fin_data.time.dt.month.isin(months))
         nochg_seasonal_data = nochg_data[var].sel(time=nochg_data.time.dt.month.isin(months))
         diff_seasonal_mean = fin_seasonal_data.mean(dim='time') - nochg_seasonal_data.mean(dim='time')
-        diff_seasonal_mean.plot(ax=ax)
+        p_season = diff_seasonal_mean.plot(ax=ax)  # 保存绘图返回的对象
+        p_season.colorbar.set_label(f'{var} ({unit})')  # 设置 color bar 的标签
 
         # 使用gridlines添加经纬度标签
         gl = ax.gridlines(draw_labels=True, linewidth=0.5, color='gray', alpha=0.5)

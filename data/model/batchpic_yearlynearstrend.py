@@ -7,8 +7,8 @@ import xarray as xr  # 新增导入 xarray 用于读取 NetCDF 文件
 
 # 柱浓度的逐年趋势图
 file_name = "fldmean.csv"
-output_dir = "/home/tgm/gasplot/plot/output/yearlynearsurface_trend/"
-example_dir = cfg.fin_dir + "merge2037.nc"
+output_dir = "/home/tgm/gasplot/plot/output/ryearlynearsurface_trend/"
+example_dir = cfg.fin_dir + "merge2038.nc"
 
 # 读取 NetCDF 文件以获取变量单位
 try:
@@ -54,9 +54,19 @@ fin_files = [f for f in os.listdir(cfg.fldmean_fin) if os.path.isfile(os.path.jo
 nochg_files = [f for f in os.listdir(cfg.fldmean_nochg) if os.path.isfile(os.path.join(cfg.fldmean_nochg, f))]
 common_files = set(fin_files).intersection(set(nochg_files))
 
+all_findf_list = []
+all_nochgdf_list = []
+cn_no_chg_list = []
+cn_fin_list = []
 for file_name in common_files:
-    try:
+    print(f"正在处理 {file_name}...")
+    print(f"输出目录为 {file_name.split('_')[0]}...")
+    output_file_name = os.path.splitext(file_name)[0] + ".png"
 
+    if os.path.exists(os.path.join(output_dir, output_file_name)):
+        print(f"File {output_file_name} already exists. Skipping...")
+        # continue
+    try:
         (findf, nochgdf) = read_data(cfg.fldmean_fin, cfg.fldmean_nochg, file_name)
         (cnfindf, cnnochgdf) = read_data(cfg.cnmean_fin, cfg.cnmean_nochg, file_name)
         boxdata = []
@@ -95,6 +105,7 @@ for file_name in common_files:
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
 
+
         # 设置图片清晰度
         plt.rcParams['figure.dpi'] = 300
 
@@ -125,14 +136,15 @@ for file_name in common_files:
 
         # 保存为 CSV 文件
         result_df.to_csv(os.path.join(output_dir, f'deviation_rates_{os.path.splitext(file_name)[0]}.csv'))
+        file_name = file_name.split('_')[0] 
 
         # 使用最后一列作为画图数据
         print(findf.columns)
         column = findf.columns[-2]
         if column == 'time':
             continue
-        if os.path.exists(output_dir + os.path.splitext(file_name)[0] + ".png"):
-            continue
+        # if os.path.exists(output_dir + os.path.splitext(file_name)[0] + ".png"):
+            # continue
         # 在绘图前，将整数年份转换为 datetime 对象
         findf['time'] = pd.to_datetime(findf['time'], format='%Y')
         cnfindf['time'] = pd.to_datetime(cnfindf['time'], format='%Y')
@@ -161,17 +173,17 @@ for file_name in common_files:
             boxnochgdf['time'] = pd.to_datetime(boxnochgdf['time'], format='%Y')
             axes[1, 0].plot(boxfindf['time'], boxfindf[column], label=box_name, linestyle='-')
             axes[1, 1].plot(boxnochgdf['time'], boxnochgdf[column], label=box_name, linestyle='-')
-            axes[1, 2].plot(boxfindf['time'], boxfindf[column] - boxnochgdf[column],
-                            label=box_name + " Difference", linestyle='-')
+            axes[1, 2].plot(boxfindf['time'], (boxfindf[column] - boxnochgdf[column])/boxnochgdf[column],
+                            label=box_name + "", linestyle='-')
         axes[0, 0].plot(findf['time'], findf[column], label='Global', linestyle='-', color='blue')
         axes[0, 0].plot(cnfindf['time'], cnfindf[column], label='China', linestyle='-', color='orange')
-        axes[0, 0].set_title(f'S1 Trend of {column}')
-        axes[1, 0].set_title(f'S1 Trend of {column}')
+        axes[0, 0].set_title(f'S1 Trend of {file_name}')
+        axes[1, 0].set_title(f'S1 Trend of {file_name}')
         axes[0, 0].set_xlabel('Time')
         axes[1, 0].set_xlabel('Time')
         # 修改纵坐标标签，添加单位
-        axes[0, 0].set_ylabel(f'{column} ({unit})')
-        axes[1, 0].set_ylabel(f'{column} ({unit})')
+        axes[0, 0].set_ylabel(f'{file_name} ({unit})')
+        axes[1, 0].set_ylabel(f'{file_name} ({unit})')
         axes[0, 0].set_ylim(y_min, y_max)
         axes[1, 0].set_ylim(y_min, y_max)
         # 设置 x 轴为日期格式
@@ -183,28 +195,28 @@ for file_name in common_files:
         # 绘制 SSP370 情景
         axes[0, 1].plot(nochgdf['time'], nochgdf[column], label='Global', linestyle='-', color='blue')
         axes[0, 1].plot(cnnochgdf['time'], cnnochgdf[column], label='China', linestyle='-', color='orange')
-        axes[0, 1].set_title(f'SSP370 Trend of {column}')
-        axes[1, 1].set_title(f'SSP370 Trend of {column}')
+        axes[0, 1].set_title(f'SSP370 Trend of {file_name}')
+        axes[1, 1].set_title(f'SSP370 Trend of {file_name}')
         axes[0, 1].set_xlabel('Time')
         axes[1, 1].set_xlabel('Time')
         # 修改纵坐标标签，添加单位
-        axes[0, 1].set_ylabel(f'{column} ({unit})')
-        axes[1, 1].set_ylabel(f'{column} ({unit})')
+        axes[0, 1].set_ylabel(f'{file_name} ({unit})')
+        axes[1, 1].set_ylabel(f'{file_name} ({unit})')
         axes[0, 1].set_ylim(y_min, y_max)
         axes[1, 1].set_ylim(y_min, y_max)
         axes[0, 1].legend()
         axes[1, 1].legend()
 
-        axes[0, 2].plot(findf['time'], findf[column] - nochgdf[column], label='Global Difference', linestyle='-', color='blue')
-        axes[0, 2].plot(cnfindf['time'], cnfindf[column] - cnnochgdf[column], label='China Difference', linestyle='-', color='orange')
+        axes[0, 2].plot(findf['time'], (findf[column] - nochgdf[column])/nochgdf[column], label='Global', linestyle='-', color='blue')
+        axes[0, 2].plot(cnfindf['time'], (cnfindf[column] - cnnochgdf[column])/cnnochgdf[column], label='China', linestyle='-', color='orange')
 
-        axes[0, 2].set_title(f'Difference between S1 and SSP370 of {column}')
-        axes[1, 2].set_title(f'Difference between S1 and SSP370 of {column}')
+        axes[0, 2].set_title(f'Relative Difference between S1 and SSP370 of {file_name}')
+        axes[1, 2].set_title(f'Relative Difference between S1 and SSP370 of {file_name}')
         axes[0, 2].set_xlabel('Time')
         axes[1, 2].set_xlabel('Time')
         # 修改纵坐标标签，添加单位
-        axes[0, 2].set_ylabel(f'Difference in {column} ({unit})')
-        axes[1, 2].set_ylabel(f'Difference in {column} ({unit})')
+        axes[0, 2].set_ylabel(f'Relative Difference in {file_name} ')
+        axes[1, 2].set_ylabel(f'Relative Difference in {file_name} ')
         axes[0, 2].legend()
         axes[1, 2].legend()
 
@@ -215,13 +227,36 @@ for file_name in common_files:
         print(f"无法绘制 {column} 的差值趋势图。")
         print(e)
 
+
+        
     # 调整子图布局
     plt.tight_layout()
     
     # 保存图片，使用文件名命名
-    output_file_name = os.path.splitext(file_name)[0] + ".png"
     print(f"正在保存 {output_file_name}...")
     plt.savefig(os.path.join(output_dir, output_file_name))
 
     # 清除当前图表
     plt.close()
+
+    # 将当前文件的 findf 和 nochgdf 添加到列表中
+    all_findf_list.append(findf)
+    all_nochgdf_list.append(nochgdf)
+    cn_no_chg_list.append(cnnochgdf)
+    cn_fin_list.append(cnfindf)
+
+# 检查列表是否为空
+if all_findf_list and all_nochgdf_list:
+    # 合并所有的 findf 和 nochgdf
+    all_findf = pd.concat(all_findf_list, ignore_index=True)
+    all_nochgdf = pd.concat(all_nochgdf_list, ignore_index=True)
+    all_cn_no_chg = pd.concat(cn_no_chg_list, ignore_index=True)
+    all_cn_fin = pd.concat(cn_fin_list, ignore_index=True)
+
+    # 保存合并后的 DataFrame
+    all_findf.to_csv(os.path.join(output_dir, 'all_findf.csv'), index=False)
+    all_nochgdf.to_csv(os.path.join(output_dir, 'all_nochgdf.csv'), index=False)
+    all_cn_no_chg.to_csv(os.path.join(output_dir, 'all_cn_no_chg.csv'), index=False)
+    all_cn_fin.to_csv(os.path.join(output_dir, 'all_cn_fin.csv'), index=False)
+else:
+    print("没有可合并的 DataFrame，跳过合并和保存操作。")

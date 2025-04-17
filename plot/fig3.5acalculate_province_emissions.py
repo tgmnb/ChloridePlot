@@ -44,7 +44,7 @@ def calculate_province_emission(masked_data, area_m2):
         float: 月排放总量 (kg/month)
     """
     # 计算每个格点的排放通量 (kg/m²/s)
-    flux = masked_data.sum(dim=['lat', 'lon'])
+    flux = masked_data.mean(dim=['lat', 'lon'])
     
     # 转换为月排放量
     seconds_per_month = 30.44 * 24 * 3600  # 平均每月秒数
@@ -74,7 +74,7 @@ def calculate_province_data(province_info, hcl_data, pcl_data):
     # 获取省份掩码和面积
     province_mask = province_shape.geometry.iloc[0]
     province_area = province_shape_proj.geometry.area.iloc[0]
-    
+    print(province_area)
     # 创建省份掩码
     lon = hcl_data.lon.values
     lat = hcl_data.lat.values

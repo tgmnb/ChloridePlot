@@ -17,8 +17,7 @@ import config as cfg
 
 fin_data = xr.open_dataset(cfg.fin_dir + "lastThreeyear.nc")
 nochg_data = xr.open_dataset(cfg.nochg_dir + "lastThreeyearnochg.nc")
-output_dir = cfg.output_dir('spacediff')
-
+output_dir = cfg.finoutput_dir('')
 # 读取中国省份边界
 base_dir = r"/mnt/d/gasdata/"
 china_map = gpd.read_file(base_dir + "2024年全国shp/中国_省.shp")
@@ -35,8 +34,18 @@ nochg_total_prec = nochg_data['PRECL'] + nochg_data['PRECC']
 var = 'Total PREC'
 fin_data[var] = total_prec
 nochg_data[var] = nochg_total_prec
+# fin_data['NO$_x$'] = fin_data['NOX']
+# nochg_data['NO$_x$'] = nochg_data['NOX']
+# fin_data['Cl'] = fin_data['CL']
+# nochg_data['Cl'] = nochg_data['CL']
+for df in [fin_data, nochg_data]:
+    df['NO$_x$'] = df['NOX']
+    df['O$_3$'] = df['O3']
+    df['acid'] = -( df['WD_H2SO4'] + df['WD_HNO3'] + df['WD_HCL'] + df['WD_HF'])
+
 # 循环数据里的所有变量
-for var in ['TS', 'PRECL', 'PRECC', 'Total PREC','PM25']:
+for var in ['O$_3$']:
+# for var in ['TS', 'PRECL', 'PRECC', 'Total PREC','PM25','NO$_x$','Cl']:
     if var in ['lat', 'lon', 'lev', 'ilev', 'time', 'time_bnds']:
         continue
     if len(fin_data[var].dims) == 1:
@@ -109,7 +118,7 @@ for var in ['TS', 'PRECL', 'PRECC', 'Total PREC','PM25']:
         ax = plt.subplot2grid((3, 2), (i // 2 + 1, i % 2), projection=ccrs.PlateCarree())
         season_axes.append(ax)
         ax.add_feature(cfeature.LAND.with_scale('50m'), edgecolor='black', facecolor='none', zorder=10)
-
+        ax.set_ylabel('')
         # 计算季节差异并绘图
         fin_seasonal_data = fin_data[var].sel(time=fin_data.time.dt.month.isin(months))
         nochg_seasonal_data = nochg_data[var].sel(time=nochg_data.time.dt.month.isin(months))
@@ -165,7 +174,7 @@ for var in ['TS', 'PRECL', 'PRECC', 'Total PREC','PM25']:
         # 给季节性子图添加标注
         label = chr(98 + i) + ') ' + f'{var}: {season} Difference'
         ax.text(0.5, -0.2, label, transform=ax.transAxes, ha='center', fontsize=12)
-
+    output_filename = os.path.join(output_dir, f'4.2{var}_diff.png')
     # 调整布局并保存
     plt.savefig(output_filename, bbox_inches='tight')
     plt.close()

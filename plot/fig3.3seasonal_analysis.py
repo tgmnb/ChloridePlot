@@ -3,17 +3,26 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from datetime import datetime
 import numpy as np
+import matplotlib.font_manager as fm
+import matplotlib as mpl
+import os
+plt.rcParams['axes.unicode_minus'] = False
 
-# 设置matplotlib参数
+# 设置 matplotlib 参数
 plt.rcParams['font.size'] = 12
 plt.rcParams['axes.titlesize'] = 14
-plt.rcParams['figure.figsize'] = (15, 12)
+plt.rcParams['figure.figsize'] = (15, 6)  # 调整图片大小以适应两个子图
 
 # 设置绘图风格
 sns.set_style("whitegrid")
 sns.set_palette("husl")
+font_path = 'SIMHEI.TTF'
+fm.fontManager.addfont(font_path)
+my_font = fm.FontProperties(fname=font_path)
+print("当前字体名为：", my_font.get_name())
 
-# 读取数据
+# 3. 设置 matplotlib 默认字体
+plt.rcParams['font.family'] = my_font.get_name()
 try:
     base_dir = r"/mnt/d/gasdata/"
     Hcldata = pd.read_csv(base_dir + "result/means/maskedFinalHcl_mean.csv", 
@@ -25,7 +34,7 @@ try:
                          parse_dates=True)
     Pcldata['pCl_all'] = Pcldata[['pCl_agri', 'pCl_bbop', 'pCl_wstop']].sum(axis=1)
 except FileNotFoundError:
-    print("Error: Data files not found. Please check the file paths.")
+    print("错误：未找到数据文件。请检查文件路径。")
     exit(1)
 
 # 选择需要的列
@@ -38,15 +47,15 @@ Pcl_monthly = Pcl_data.groupby(Pcl_data.index.month).mean()
 
 # 定义标签映射
 labels = {
-    'HCl_ene': 'power',
-    'HCl_ind': 'industry',
-    'HCl_res': 'residential',
-    'HCl_all': 'others',
-    'TOTAL': 'TOTAL',
-    'pCl_ene': 'power',
-    'pCl_ind': 'industry',
-    'pCl_res': 'residential',
-    'pCl_all': 'others'
+    'HCl_ene': '电力',
+    'HCl_ind': '工业',
+    'HCl_res': '居民',
+    'HCl_all': '其他',
+    'TOTAL': '总计',
+    'pCl_ene': '电力',
+    'pCl_ind': '工业',
+    'pCl_res': '居民',
+    'pCl_all': '其他'
 }
 
 # 创建图表
@@ -63,9 +72,10 @@ for column in Hcl_monthly.columns:
              markersize=6,
              markerfacecolor='white',
              markeredgewidth=1.5)
-ax1.set_title('HCl Monthly Average Emissions')
-ax1.set_xlabel('Month')
-ax1.set_ylabel('Emissions (kg/m²/s)')
+# 修改标题和标签为中文
+ax1.set_title('HCl月平均排放量')
+ax1.set_xlabel('月份')
+ax1.set_ylabel('排放量 ($kg·m^{-2}·s^{-1}$)')
 ax1.set_xticks(range(1, 13))
 ax1.grid(True, alpha=0.3)
 ax1.set_yscale('log')  # 设置为对数坐标
@@ -80,9 +90,10 @@ for column in Pcl_monthly.columns:
              markersize=6,
              markerfacecolor='white',
              markeredgewidth=1.5)
-ax2.set_title('pCl Monthly Average Emissions')
-ax2.set_xlabel('Month')
-ax2.set_ylabel('Emissions (kg/m²/s)')
+# 修改标题和标签为中文
+ax2.set_title('pCl月平均排放量')
+ax2.set_xlabel('月份')
+ax2.set_ylabel('排放量 ($kg·m^{-2}·s^{-1}$)')
 ax2.set_xticks(range(1, 13))
 ax2.grid(True, alpha=0.3)
 ax2.set_yscale('log')  # 设置为对数坐标
@@ -91,24 +102,37 @@ ax2.text(-0.1, 1.05, '(b)', transform=ax2.transAxes, fontsize=16, fontweight='bo
 # 3. 季节性堆叠图
 ax3 = fig.add_subplot(gs[1, :])
 seasons = {
-    'Winter': [12, 1, 2],
-    'Spring': [3, 4, 5],
-    'Summer': [6, 7, 8],
-    'Autumn': [9, 10, 11]
+    'Winter': '冬季',
+    'Spring': '春季',
+    'Summer': '夏季',
+    'Autumn': '秋季'
 }
+
+# 清除字体缓存
+cache_dir = mpl.get_cachedir()
+cache_file = os.path.join(cache_dir, 'fontlist-v330.json')
+if os.path.exists(cache_file):
+    os.remove(cache_file)
 
 # 计算季节平均值
 seasonal_data = pd.DataFrame()
 seasonal_hcl = pd.DataFrame()  # 用于存储HCl的季节数据
 seasonal_pcl = pd.DataFrame()  # 用于存储pCl的季节数据
 
-for season, months in seasons.items():
+original_seasons = {
+    'Winter': [12, 1, 2],
+    'Spring': [3, 4, 5],
+    'Summer': [6, 7, 8],
+    'Autumn': [9, 10, 11]
+}
+
+for season, months in original_seasons.items():
     # 计算HCl和PCl各部门在每个季节的平均值
     season_data = {}
     season_hcl_data = {}
     season_pcl_data = {}
     
-    for sector in ['power', 'industry', 'residential', 'others']:
+    for sector in ['电力', '工业', '居民', '其他']:
         hcl_col = [col for col, label in labels.items() if label == sector and col.startswith('HCl')][0]
         pcl_col = [col for col, label in labels.items() if label == sector and col.startswith('pCl')][0]
         
@@ -119,9 +143,9 @@ for season, months in seasons.items():
         season_hcl_data[sector] = hcl_seasonal
         season_pcl_data[sector] = pcl_seasonal
     
-    seasonal_data[season] = pd.Series(season_data)
-    seasonal_hcl[season] = pd.Series(season_hcl_data)
-    seasonal_pcl[season] = pd.Series(season_pcl_data)
+    seasonal_data[seasons[season]] = pd.Series(season_data)
+    seasonal_hcl[seasons[season]] = pd.Series(season_hcl_data)
+    seasonal_pcl[seasons[season]] = pd.Series(season_pcl_data)
 
 # 打印季节性分析数据
 print("\n=== 季节性排放分析 ===")
@@ -195,29 +219,30 @@ print(ratio_df.round(2))
 
 # 堆叠柱状图
 bottom = np.zeros(4)
-sectors = ['power', 'industry', 'residential', 'others']
+sectors = ['电力', '工业', '居民', '其他']
 x = range(4)  # 四个季节
 
 for sector in sectors:
-    values = [seasonal_data[season][sector] for season in seasons.keys()]
+    values = [seasonal_data[season][sector] for season in seasons.values()]
     ax3.bar(x, values, bottom=bottom, label=sector)
     bottom += values
 
 # 添加总量线
-totals = [seasonal_data[season].sum() for season in seasons.keys()]
-ax3.plot(x, totals, 'k--', label='TOTAL', linewidth=2, zorder=5)
+totals = [seasonal_data[season].sum() for season in seasons.values()]
+ax3.plot(x, totals, 'k--', label='总计', linewidth=2, zorder=5)
 
-ax3.set_title('Seasonal Total Chlorine Emissions by Sector')
-ax3.set_xlabel('Season')
-ax3.set_ylabel('Total Emissions (kg/m²/s)')
+# 修改标题和标签为中文
+ax3.set_title('各部门季节性总氯排放量')
+ax3.set_xlabel('季节')
+ax3.set_ylabel('总排放量 ($kg·m^{-2}·s^{-1}$)')
 ax3.set_xticks(x)
-ax3.set_xticklabels(seasons.keys())
+ax3.set_xticklabels(seasons.values())
 ax3.grid(True, alpha=0.3)
 ax3.legend(loc='upper left')
 ax3.text(-0.05, 1.05, '(c)', transform=ax3.transAxes, fontsize=16, fontweight='bold')
 
 # 添加共同的图例
-legend_labels = ['power', 'industry', 'residential', 'others', 'TOTAL']
+legend_labels = ['电力', '工业', '居民', '其他', '总计']
 fig.legend(ax1.get_lines()[:5], legend_labels,
           loc='center',
           bbox_to_anchor=(0.5, 0.52),  # 调整图例位置

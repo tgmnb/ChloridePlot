@@ -26,6 +26,13 @@ def output_dir(foldname):
         os.makedirs(output_dir)
     return output_dir
 
+def finoutput_dir(foldname):
+    output_dir = "/home/tgm/gasplot/output/"
+    output_dir = os.path.join(output_dir, foldname)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    return output_dir
+
 # 路径
 fin_dir = "/mnt/d/fin/fin/cam/"
 nochg_dir = "/mnt/d/fin/nochg/cam/"

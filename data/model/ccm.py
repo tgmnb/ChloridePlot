@@ -32,6 +32,7 @@ def bestEdim(data, output_dir):
     for i, sp in enumerate(data.columns[1:]):
         MAEs = np.zeros(len(range(2, 25)))
         # 测试从二维到 24 维
+        # print(f"Calculating best E for {sp}")
         for E in range(2, 25):
             library_string = "1 {}".format(len(data) - E)
             # 移除索引，避免索引中的时间信息干扰
@@ -119,7 +120,7 @@ def calCCM(data, output_dir, bestEDim):
     output_dir = output_dir + "/ccm/"
     if os.path.exists(output_dir + "ccm.csv"):
         print("文件已存在" + str(output_dir + "ccm.csv"))
-        return
+        # return
     elif not os.path.exists(output_dir):
         os.makedirs(output_dir)
     keys = [col for col in data.columns.values if col in bestEDim.iloc[:, 0].values]
@@ -141,14 +142,29 @@ def calCCM(data, output_dir, bestEDim):
 def process_stream(filedir, output_dir):
     data = pd.read_csv(filedir)
     data = pd.DataFrame(data)
+    data['soa'] = data['soa1_a1'] + data['soa1_a2']  + data['soa2_a1'] + data['soa2_a2']+ data['soa3_a1'] + data['soa3_a2']+ data['soa4_a1'] + data['soa4_a2']+ data['soa5_a1'] + data['soa5_a2'] + \
+                data['soa1_c1'] + data['soa1_c2'] + data['soa2_c1'] + data['soa2_c2'] + data['soa3_c1'] + data['soa3_c2'] + data['soa4_c1'] + data['soa4_c2'] + data['soa5_c1'] + data['soa5_c2']
+    data['pom'] = data['pom_a1'] + data['pom_a4'] + \
+                data['pom_c1'] + data['pom_c4']
+    data['pcl'] = data['pcl_a1'] + data['pcl_c1']
+    data['dust'] = data['dst_a1'] + data['dst_a2'] + data['dst_a3'] + \
+                data['dst_c1'] + data['dst_c2'] + data['dst_c3']
+    data['bc'] = data['bc_a1'] + data['bc_a4'] + \
+                data['bc_c1'] + data['bc_c4']
+    data['ncl'] = data['ncl_a1'] + data['ncl_a2'] + data['ncl_a3'] + \
+                data['ncl_c1'] + data['ncl_c2'] + data['ncl_c3']
+    data['sulfate'] = data['so4_a1'] + data['so4_a2'] + data['so4_a3'] + \
+                data['so4_c1'] + data['so4_c2'] + data['so4_c3']
+    # print(data['sulfate'])
+    data['allaerosol'] = data['soa'] + data['pom'] + data['dust'] + data['bc'] + data['ncl'] + data['sulfate']
     edm = bestEdim(data, output_dir)
     calCCM(data, output_dir, edm)
 
 
 if __name__ == "__main__":
     worklist = [
-        # [os.path.join(cfg.colmean_fin, "fldmean.csv"), "/home/tgm/gasplot/plot/output/ccm/fin/colglobal/"]
-        [os.path.join(cfg.fldmean_fin, "fldmean.csv"), "/home/tgm/gasplot/plot/output/ccm/fin/global/"]
+        [os.path.join(cfg.colmean_fin, "fldmean.csv"), "/home/tgm/gasplot/plot/output/ccm/fin/colglobal/"]
+        # [os.path.join(cfg.fldmean_fin, "fldmean.csv"), "/home/tgm/gasplot/plot/output/ccm/fin/global/"]
     ]
 
     for work in worklist:

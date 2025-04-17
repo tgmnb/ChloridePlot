@@ -6,11 +6,20 @@ import numpy as np
 from matplotlib.gridspec import GridSpec
 import os
 import pickle
+import matplotlib.font_manager as fm
 
-# 设置matplotlib参数
+# 设置 matplotlib 参数
 plt.rcParams['font.size'] = 12
 plt.rcParams['axes.titlesize'] = 14
 plt.rcParams['figure.figsize'] = (15, 12)
+
+# 设置字体
+font_path = 'SIMHEI.TTF'
+fm.fontManager.addfont(font_path)
+my_font = fm.FontProperties(fname=font_path)
+print("当前字体名为：", my_font.get_name())
+plt.rcParams['font.family'] = my_font.get_name()
+plt.rcParams['axes.unicode_minus'] = False
 
 # 读取数据
 base_dir = r"/mnt/d/gasdata/"
@@ -26,6 +35,13 @@ regions = {
     'Middle': ['山西省', '安徽省', '江西省', '河南省', '湖北省', '湖南省'],
     'West': ['内蒙古自治区', '广西壮族自治区', '重庆市', '四川省', '贵州省', '云南省', 
            '西藏自治区', '陕西省', '甘肃省', '青海省', '宁夏回族自治区', '新疆维吾尔自治区']
+}
+
+# 定义中英文区域名称映射
+region_name_mapping = {
+    'East': '东部地区',
+    'Middle': '中部地区',
+    'West': '西部地区'
 }
 
 def calculate_total_emissions(dataset):
@@ -98,10 +114,10 @@ def plot_regional_comparison(hcl_regional, pcl_regional):
     ax1 = fig.add_subplot(gs[0, 0])
     for region in regions.keys():
         ax1.plot(range(len(hcl_regional)), hcl_regional[region], 
-                label=region, marker='o', markersize=4)
-    ax1.set_title('HCl Regional Emissions Time Series')
-    ax1.set_xlabel('Year')
-    ax1.set_ylabel('Emissions (kg/m²/s)')
+                label=region_name_mapping[region], marker='o', markersize=4)  # 修改标签为中文
+    ax1.set_title('HCl区域排放时间序列')
+    ax1.set_xlabel('年份')
+    ax1.set_ylabel('排放量 ($kg·m^{-2}·s^{-1}$)')
     ax1.set_xticks(x_ticks)
     ax1.set_xticklabels(years, rotation=45)
     ax1.legend()
@@ -112,10 +128,10 @@ def plot_regional_comparison(hcl_regional, pcl_regional):
     ax2 = fig.add_subplot(gs[1, 0])
     for region in regions.keys():
         ax2.plot(range(len(pcl_regional)), pcl_regional[region], 
-                label=region, marker='o', markersize=4)
-    ax2.set_title('pCl Regional Emissions Time Series')
-    ax2.set_xlabel('Year')
-    ax2.set_ylabel('Emissions (kg/m²/s)')
+                label=region_name_mapping[region], marker='o', markersize=4)  # 修改标签为中文
+    ax2.set_title('pCl区域排放时间序列')
+    ax2.set_xlabel('年份')
+    ax2.set_ylabel('排放量 ($kg·m^{-2}·s^{-1}$)')
     ax2.set_xticks(x_ticks)
     ax2.set_xticklabels(years, rotation=45)
     ax2.legend()
@@ -133,10 +149,10 @@ def plot_regional_comparison(hcl_regional, pcl_regional):
     ax3.bar(x - width/2, hcl_means, width, label='HCl')
     ax3.bar(x + width/2, pcl_means, width, label='pCl')
     
-    ax3.set_title('Average Regional Emissions')
+    ax3.set_title('区域平均排放量对比')
     ax3.set_xticks(x)
-    ax3.set_xticklabels(regions.keys())
-    ax3.set_ylabel('Emissions (kg/m²/s)')
+    ax3.set_xticklabels([region_name_mapping[region] for region in regions.keys()])
+    ax3.set_ylabel('排放量 ($kg·m^{-2}·s^{-1}$)')
     ax3.legend()
     ax3.grid(True, alpha=0.3)
     ax3.text(-0.1, 1.05, '(c)', transform=ax3.transAxes, fontsize=16, fontweight='bold')
@@ -194,8 +210,8 @@ def analyze_emissions(hcl_regional, pcl_regional):
         pcl_max_value = pcl_regional[region].max()
         
         print(f"\n{region}区域:")
-        print(f"HCl峰值: {hcl_max_value:.2e} kg/m²/s (出现在{hcl_max_year}年)")
-        print(f"pCl峰值: {pcl_max_value:.2e} kg/m²/s (出现在{pcl_max_year}年)")
+        print(f"HCl峰值: {hcl_max_value:.2e} $kg·m^{-2}·s^{-1}$ (出现在{hcl_max_year}年)")
+        print(f"pCl峰值: {pcl_max_value:.2e} $kg·m^{-2}·s^{-1}$ (出现在{pcl_max_year}年)")
 
 # 加载或计算排放数据
 hcl_regional, pcl_regional = load_or_calculate_emissions()

@@ -38,7 +38,31 @@ nochg_total_prec = nochg_data['PRECL'] + nochg_data['PRECC']
 var = 'Total PREC'
 fin_data[var] = total_prec
 nochg_data[var] = nochg_total_prec
+for df in [fin_data, nochg_data]:
+    # df['SOA'] = df['soa1_a1'] + df['soa1_a2']  + df['soa2_a1'] + df['soa2_a2']+ df['soa3_a1'] + df['soa3_a2']+ df['soa4_a1'] + df['soa4_a2']+ df['soa5_a1'] + df['soa5_a2']
+    # df['pom'] = df['pom_a1'] + df['pom_a4']
+    # df['dust'] = df['dst_a1'] + df['dst_a2'] + df['dst_a3'] 
+    # df['bc'] = df['bc_a1'] + df['bc_a4']
+    # df['ncl'] = df['ncl_a1'] + df['ncl_a2'] + df['ncl_a3']
+    # df['so4'] = df['so4_a1'] + df['so4_a2'] + df['so4_a3'] 
+    # df['all aerosol'] = df['SOA'] + df['pom'] + df['dust'] + df['bc'] + df['ncl'] + df['so4']
+    df['SOA'] = df['soa1_a1'] + df['soa1_a2']  + df['soa2_a1'] + df['soa2_a2']+ df['soa3_a1'] + df['soa3_a2']+ df['soa4_a1'] + df['soa4_a2']+ df['soa5_a1'] + df['soa5_a2'] + \
+                df['soa1_c1'] + df['soa1_c2'] + df['soa2_c1'] + df['soa2_c2'] + df['soa3_c1'] + df['soa3_c2'] + df['soa4_c1'] + df['soa4_c2'] + df['soa5_c1'] + df['soa5_c2']
+    df['POM'] = df['pom_a1'] + df['pom_a4'] + \
+                df['pom_c1'] + df['pom_c4']
+
+    df['DUST'] = df['dst_a1'] + df['dst_a2'] + df['dst_a3'] + \
+                df['dst_c1'] + df['dst_c2'] + df['dst_c3']
+    df['BC'] = df['bc_a1'] + df['bc_a4'] + \
+                df['bc_c1'] + df['bc_c4']
+    # df['ncl'] = df['ncl_a1'] + df['ncl_a2'] + df['ncl_a3'] + \
+    #             df['ncl_c1'] + df['ncl_c2'] + df['ncl_c3']
+    df['Sulfate'] = df['so4_a1'] + df['so4_a2'] + df['so4_a3'] + \
+                df['so4_c1'] + df['so4_c2'] + df['so4_c3'] 
+    # df['all aerosol'] = df['SOA'] + df['pom'] + df['dust'] + df['bc'] + df['ncl'] + df['so4']
 # 循环数据里的所有变量
+# for var in ['SOA','pom','dust','bc','ncl','so4','all aerosol']:
+
 for var in fin_data.data_vars:
     # for var in ['TS', 'PRECL', 'PRECC','Total PREC','PM25']:
     if var in ['lat', 'lon', 'lev', 'ilev', 'time', 'time_bnds','CLNO2','pcl_a1','pcl_a1DDF','pcl_a1SFWET','pcl_c1','pcl_c1DDF','pcl_c1DDF','pcl_c1SFWET']:

@@ -19,6 +19,8 @@ except Exception as e:
     print(f"读取 NetCDF 文件 {example_dir} 时出错: {e}")
     var_units = {}
 
+
+
 def read_data(fin_dir, nochg_dir, file_name):
     findf = pd.read_csv(fin_dir + file_name)
     nochgdf = pd.read_csv(nochg_dir + file_name)
@@ -46,7 +48,6 @@ def read_data(fin_dir, nochg_dir, file_name):
     # 重置索引
     findf = findf.reset_index(drop=True)
     nochgdf = nochgdf.reset_index(drop=True)
-
     return findf, nochgdf
 
 (findf, nochgdf) = read_data(cfg.fldmean_fin, cfg.fldmean_nochg, file_name)
@@ -82,7 +83,6 @@ for box in cfg.box_list:
     # 重置索引
     boxfindf = boxfindf.reset_index(drop=True)
     boxnochgdf = boxnochgdf.reset_index(drop=True)
-
     boxdata.append((cfg.Enbox_list[i][0], boxfindf, boxnochgdf))
     i += 1
 
@@ -123,12 +123,15 @@ result_df.to_csv(os.path.join(output_dir, 'deviation_rates.csv'))
 # exit()
 for df in [findf, cnfindf, nochgdf, cnnochgdf] + [boxfindf for _, boxfindf, _ in boxdata] + [boxnochgdf for _, _, boxnochgdf in boxdata]:
     df['Total PREC'] = df['PRECC'] + df['PRECL']
+    df['acid'] = df['WD_H2SO4'] + df['WD_HNO3'] + df['WD_HCL'] + df['WD_HF']
+
 # 绘制每一列
 for column in findf.columns:
     if column == 'time':
         continue
     if os.path.exists(output_dir + column + ".png"):
         continue
+
     try:
         # 在绘图前，将整数年份转换为 datetime 对象
         findf['time'] = pd.to_datetime(findf['time'], format='%Y')
@@ -138,6 +141,11 @@ for column in findf.columns:
         china_diff['time'] = pd.to_datetime(cnnochgdf['time'], format='%Y')
         global_diff['time'] = pd.to_datetime(cnnochgdf['time'], format='%Y')
         
+        y_min_g = min(findf[column].min(), cnfindf[column].min(),
+                    nochgdf[column].min(), cnnochgdf[column].min())
+        y_max_g = max(findf[column].max(), cnfindf[column].max(),
+                    nochgdf[column].max(), cnnochgdf[column].max())
+
         # 创建包含三个子图的画布
         y_min = min(findf[column].min(), cnfindf[column].min(),
                     nochgdf[column].min(), cnnochgdf[column].min(),
@@ -150,7 +158,8 @@ for column in findf.columns:
         fig, axes = plt.subplots(2, 3, figsize=(18, 12), sharey='col')
         # 获取变量单位
         unit = var_units.get(column, '')
-
+        if column == 'acid':
+            unit = "$kg/m^2s$"
         # 绘制 S1 情景
         for box in boxdata:
             (box_name, boxfindf, boxnochgdf) = box
@@ -169,7 +178,7 @@ for column in findf.columns:
         # 修改纵坐标标签，添加单位
         axes[0, 0].set_ylabel(f'{column} ({unit})')
         axes[1, 0].set_ylabel(f'{column} ({unit})')
-        axes[0, 0].set_ylim(y_min, y_max)
+        axes[0, 0].set_ylim(y_min_g, y_max_g)
         axes[1, 0].set_ylim(y_min, y_max)
         # 设置 x 轴为日期格式
         for ax in axes.flat:
@@ -187,7 +196,7 @@ for column in findf.columns:
         # 修改纵坐标标签，添加单位
         axes[0, 1].set_ylabel(f'{column} ({unit})')
         axes[1, 1].set_ylabel(f'{column} ({unit})')
-        axes[0, 1].set_ylim(y_min, y_max)
+        axes[0, 1].set_ylim(y_min_g, y_max_g)
         axes[1, 1].set_ylim(y_min, y_max)
         axes[0, 1].legend()
         axes[1, 1].legend()

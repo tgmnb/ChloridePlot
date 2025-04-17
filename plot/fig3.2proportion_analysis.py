@@ -3,16 +3,24 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from datetime import datetime
 import numpy as np
+import matplotlib.font_manager as fm
 
-# 设置matplotlib参数
+# 设置 matplotlib 参数
 plt.rcParams['font.size'] = 12
 plt.rcParams['axes.titlesize'] = 14
-plt.rcParams['figure.figsize'] = (15, 10)  # 调整图的高度
+plt.rcParams['figure.figsize'] = (15, 6)  # 调整图片大小以适应两个子图
 
 # 设置绘图风格
 sns.set_style("whitegrid")
 sns.set_palette("husl")
+font_path = 'SIMHEI.TTF'
+fm.fontManager.addfont(font_path)
+my_font = fm.FontProperties(fname=font_path)
+print("当前字体名为：", my_font.get_name())
 
+# 3. 设置 matplotlib 默认字体
+plt.rcParams['font.family'] = my_font.get_name()
+plt.rcParams['axes.unicode_minus'] = False
 # 读取数据
 try:
     base_dir = r"/mnt/d/gasdata/"
@@ -52,10 +60,10 @@ gs = fig.add_gridspec(2, 2, height_ratios=[1, 1], hspace=0.3)
 # HCl和PCl总量占比图
 ax1 = fig.add_subplot(gs[0, :])
 ax1.fill_between(valid_years, hcl_proportion[valid_data], 0, label='HCl', alpha=0.8)
-ax1.fill_between(valid_years, 100, hcl_proportion[valid_data], label='PCl', alpha=0.8)
-ax1.set_title('Total Proportion of HCl and PCl')
-ax1.set_xlabel('Year')
-ax1.set_ylabel('Proportion (%)')
+ax1.fill_between(valid_years, 100, hcl_proportion[valid_data], label='pCl', alpha=0.8)
+ax1.set_title('HCl和pCl的排放部门占比')
+ax1.set_xlabel('年')
+ax1.set_ylabel('比例 (%)')
 ax1.set_ylim(0, 100)
 ax1.grid(True, alpha=0.3)
 ax1.legend(loc='center right')
@@ -67,10 +75,10 @@ ax2.stackplot(valid_years,
               Hcl_yearly['HCl_ind_prop'][valid_data],
               Hcl_yearly['HCl_res_prop'][valid_data],
               Hcl_yearly['HCl_all_prop'][valid_data]],
-             labels=['Power', 'Industry', 'Residential', 'Others'])
-ax2.set_title('HCl Emission Sources')
-ax2.set_xlabel('Year')
-ax2.set_ylabel('Proportion (%)')
+             labels=['电力', '工业', '居民', '其它'])
+ax2.set_title('HCl 排放部门占比')
+ax2.set_xlabel('年')
+ax2.set_ylabel('比例 (%)')
 ax2.grid(True, alpha=0.3)
 ax2.legend(loc='center right')
 
@@ -81,10 +89,10 @@ ax3.stackplot(valid_years,
               Pcl_yearly['pCl_ind_prop'][valid_data],
               Pcl_yearly['pCl_res_prop'][valid_data],
               Pcl_yearly['pCl_all_prop'][valid_data]],
-             labels=['Power', 'Industry', 'Residential', 'Others'])
-ax3.set_title('PCl Emission Sources')
-ax3.set_xlabel('Year')
-ax3.set_ylabel('Proportion (%)')
+             labels=['电力', '工业', '居民', '其它'])
+ax3.set_title('pCl 排放部门占比')
+ax3.set_xlabel('年')
+ax3.set_ylabel('比例 (%)')
 ax3.grid(True, alpha=0.3)
 ax3.legend(loc='center right')
 
